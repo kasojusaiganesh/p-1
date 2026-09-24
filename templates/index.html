@@ -1,0 +1,122 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>SpamGuard | Email Detection</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="container">
+
+        <div class="header">
+            <div class="logo">✉</div>
+            <h1>SpamGuard</h1>
+            <p>AI-Powered Email Detection</p>
+        </div>
+
+        <div class="card">
+
+            <h2>Check Your Email</h2>
+
+            <p class="description">
+                Enter an email message to identify whether it is spam or genuine.
+            </p>
+
+            <label for="email">Email Message</label>
+
+            <textarea
+                id="email"
+                placeholder="Enter your email message here..."
+                rows="7"></textarea>
+
+            <button id="checkButton" onclick="checkEmail()">
+                🔍 Detect Email
+            </button>
+
+            <div id="loading" class="loading hidden">
+                Analyzing your email...
+            </div>
+
+            <div id="result" class="result hidden">
+                <h3 id="resultTitle"></h3>
+                <p id="resultMessage"></p>
+                <p id="confidence"></p>
+            </div>
+
+        </div>
+
+        <div class="footer">
+            <p>Powered by Python & Machine Learning</p>
+        </div>
+
+    </div>
+
+    <script>
+        async function checkEmail() {
+
+            const email = document.getElementById("email").value.trim();
+            const resultBox = document.getElementById("result");
+            const loading = document.getElementById("loading");
+            const button = document.getElementById("checkButton");
+
+            if (!email) {
+                alert("Please enter an email message.");
+                return;
+            }
+
+            resultBox.classList.add("hidden");
+            loading.classList.remove("hidden");
+            button.disabled = true;
+
+            try {
+                const response = await fetch("/predict", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        email: email
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || "Prediction failed");
+                }
+
+                document.getElementById("resultTitle").textContent =
+                    data.result;
+
+                document.getElementById("resultMessage").textContent =
+                    data.result === "SPAM EMAIL"
+                    ? "This message looks like spam."
+                    : "This message looks genuine.";
+
+                document.getElementById("confidence").textContent =
+                    "Model confidence: " + data.confidence + "%";
+
+                resultBox.classList.remove("hidden");
+
+                if (data.result === "SPAM EMAIL") {
+                    resultBox.className = "result spam";
+                } else {
+                    resultBox.className = "result genuine";
+                }
+
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                loading.classList.add("hidden");
+                button.disabled = false;
+            }
+        }
+    </script>
+
+</body>
+</html>
